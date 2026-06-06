@@ -1,0 +1,710 @@
+[
+    {
+        "title": "MPC Member Greene Speaks",
+        "currency": "GBP",
+        "impact": "LOW",
+        "utc_time": "2026-05-31T12:30:00+00:00"
+    },
+    {
+        "title": "FOMC Member Waller Speaks",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-05-31T12:30:00+00:00"
+    },
+    {
+        "title": "Capital Spending q/y",
+        "currency": "JPY",
+        "impact": "LOW",
+        "utc_time": "2026-05-31T23:50:00+00:00"
+    },
+    {
+        "title": "Final Manufacturing PMI",
+        "currency": "JPY",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T00:30:00+00:00"
+    },
+    {
+        "title": "FOMC Member Powell Speaks",
+        "currency": "USD",
+        "impact": "MEDIUM",
+        "utc_time": "2026-06-01T00:30:00+00:00"
+    },
+    {
+        "title": "MI Inflation Gauge m/m",
+        "currency": "AUD",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T01:00:00+00:00"
+    },
+    {
+        "title": "ANZ Job Advertisements m/m",
+        "currency": "AUD",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T01:30:00+00:00"
+    },
+    {
+        "title": "RatingDog Manufacturing PMI",
+        "currency": "CNY",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T01:45:00+00:00"
+    },
+    {
+        "title": "German Retail Sales m/m",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T06:00:00+00:00"
+    },
+    {
+        "title": "Nationwide HPI m/m",
+        "currency": "GBP",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T06:00:00+00:00"
+    },
+    {
+        "title": "Commodity Prices y/y",
+        "currency": "AUD",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T06:30:00+00:00"
+    },
+    {
+        "title": "Retail Sales y/y",
+        "currency": "CHF",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T06:30:00+00:00"
+    },
+    {
+        "title": "GDP q/q",
+        "currency": "CHF",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T07:00:00+00:00"
+    },
+    {
+        "title": "Spanish Manufacturing PMI",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T07:15:00+00:00"
+    },
+    {
+        "title": "Manufacturing PMI",
+        "currency": "CHF",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T07:30:00+00:00"
+    },
+    {
+        "title": "Italian Manufacturing PMI",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T07:45:00+00:00"
+    },
+    {
+        "title": "French Final Manufacturing PMI",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T07:50:00+00:00"
+    },
+    {
+        "title": "German Final Manufacturing PMI",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T07:55:00+00:00"
+    },
+    {
+        "title": "Final Manufacturing PMI",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T08:00:00+00:00"
+    },
+    {
+        "title": "M3 Money Supply y/y",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T08:00:00+00:00"
+    },
+    {
+        "title": "Private Loans y/y",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T08:00:00+00:00"
+    },
+    {
+        "title": "Final Manufacturing PMI",
+        "currency": "GBP",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T08:30:00+00:00"
+    },
+    {
+        "title": "Unemployment Rate",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T09:00:00+00:00"
+    },
+    {
+        "title": "Manufacturing PMI",
+        "currency": "CAD",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T13:30:00+00:00"
+    },
+    {
+        "title": "Final Manufacturing PMI",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T13:45:00+00:00"
+    },
+    {
+        "title": "ISM Manufacturing PMI",
+        "currency": "USD",
+        "impact": "HIGH",
+        "utc_time": "2026-06-01T14:00:00+00:00"
+    },
+    {
+        "title": "ISM Manufacturing Prices",
+        "currency": "USD",
+        "impact": "MEDIUM",
+        "utc_time": "2026-06-01T14:00:00+00:00"
+    },
+    {
+        "title": "Construction Spending m/m",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T14:00:00+00:00"
+    },
+    {
+        "title": "Gov Council Member Rogers Speaks",
+        "currency": "CAD",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T16:00:00+00:00"
+    },
+    {
+        "title": "Monetary Base y/y",
+        "currency": "JPY",
+        "impact": "LOW",
+        "utc_time": "2026-06-01T23:50:00+00:00"
+    },
+    {
+        "title": "Building Approvals m/m",
+        "currency": "AUD",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T01:30:00+00:00"
+    },
+    {
+        "title": "Company Operating Profits q/q",
+        "currency": "AUD",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T01:30:00+00:00"
+    },
+    {
+        "title": "Current Account",
+        "currency": "AUD",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T01:30:00+00:00"
+    },
+    {
+        "title": "10-y Bond Auction",
+        "currency": "JPY",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T03:35:00+00:00"
+    },
+    {
+        "title": "FOMC Member Kashkari Speaks",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T05:50:00+00:00"
+    },
+    {
+        "title": "French Gov Budget Balance",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T06:45:00+00:00"
+    },
+    {
+        "title": "Spanish Unemployment Change",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T07:00:00+00:00"
+    },
+    {
+        "title": "M4 Money Supply m/m",
+        "currency": "GBP",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T08:30:00+00:00"
+    },
+    {
+        "title": "Mortgage Approvals",
+        "currency": "GBP",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T08:30:00+00:00"
+    },
+    {
+        "title": "Net Lending to Individuals m/m",
+        "currency": "GBP",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T08:30:00+00:00"
+    },
+    {
+        "title": "Core CPI Flash Estimate y/y",
+        "currency": "EUR",
+        "impact": "MEDIUM",
+        "utc_time": "2026-06-02T09:00:00+00:00"
+    },
+    {
+        "title": "CPI Flash Estimate y/y",
+        "currency": "EUR",
+        "impact": "MEDIUM",
+        "utc_time": "2026-06-02T09:00:00+00:00"
+    },
+    {
+        "title": "10-y Bond Auction",
+        "currency": "GBP",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T09:00:00+00:00"
+    },
+    {
+        "title": "FOMC Member Hammack Speaks",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T12:30:00+00:00"
+    },
+    {
+        "title": "BOE Gov Bailey Speaks",
+        "currency": "GBP",
+        "impact": "HIGH",
+        "utc_time": "2026-06-02T14:00:00+00:00"
+    },
+    {
+        "title": "JOLTS Job Openings",
+        "currency": "USD",
+        "impact": "MEDIUM",
+        "utc_time": "2026-06-02T14:00:00+00:00"
+    },
+    {
+        "title": "RCM/TIPP Economic Optimism",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T14:02:00+00:00"
+    },
+    {
+        "title": "Omdia Total Vehicle Sales",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T14:15:00+00:00"
+    },
+    {
+        "title": "MPC Member Greene Speaks",
+        "currency": "GBP",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T15:00:00+00:00"
+    },
+    {
+        "title": "GDT Price Index",
+        "currency": "NZD",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T15:05:00+00:00"
+    },
+    {
+        "title": "API Weekly Statistical Bulletin",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T20:30:00+00:00"
+    },
+    {
+        "title": "Building Consents m/m",
+        "currency": "NZD",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T22:45:00+00:00"
+    },
+    {
+        "title": "Overseas Trade Index q/q",
+        "currency": "NZD",
+        "impact": "LOW",
+        "utc_time": "2026-06-02T22:45:00+00:00"
+    },
+    {
+        "title": "GDP q/q",
+        "currency": "AUD",
+        "impact": "HIGH",
+        "utc_time": "2026-06-03T01:30:00+00:00"
+    },
+    {
+        "title": "RatingDog Services PMI",
+        "currency": "CNY",
+        "impact": "LOW",
+        "utc_time": "2026-06-03T01:45:00+00:00"
+    },
+    {
+        "title": "FOMC Member Goolsbee Speaks",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-03T03:00:00+00:00"
+    },
+    {
+        "title": "Private Sector Credit m/m",
+        "currency": "AUD",
+        "impact": "LOW",
+        "utc_time": "2026-06-03T06:19:00+00:00"
+    },
+    {
+        "title": "Spanish Services PMI",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-03T07:15:00+00:00"
+    },
+    {
+        "title": "Italian Services PMI",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-03T07:45:00+00:00"
+    },
+    {
+        "title": "French Final Services PMI",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-03T07:50:00+00:00"
+    },
+    {
+        "title": "German Final Services PMI",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-03T07:55:00+00:00"
+    },
+    {
+        "title": "Final Services PMI",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-03T08:00:00+00:00"
+    },
+    {
+        "title": "Final Services PMI",
+        "currency": "GBP",
+        "impact": "LOW",
+        "utc_time": "2026-06-03T08:30:00+00:00"
+    },
+    {
+        "title": "BOJ Gov Ueda Speaks",
+        "currency": "JPY",
+        "impact": "HIGH",
+        "utc_time": "2026-06-03T08:30:00+00:00"
+    },
+    {
+        "title": "PPI m/m",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-03T09:00:00+00:00"
+    },
+    {
+        "title": "ADP Non-Farm Employment Change",
+        "currency": "USD",
+        "impact": "HIGH",
+        "utc_time": "2026-06-03T12:15:00+00:00"
+    },
+    {
+        "title": "Labor Productivity q/q",
+        "currency": "CAD",
+        "impact": "LOW",
+        "utc_time": "2026-06-03T12:30:00+00:00"
+    },
+    {
+        "title": "FOMC Member Barr Speaks",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-03T13:00:00+00:00"
+    },
+    {
+        "title": "Final Services PMI",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-03T13:45:00+00:00"
+    },
+    {
+        "title": "ISM Services PMI",
+        "currency": "USD",
+        "impact": "HIGH",
+        "utc_time": "2026-06-03T14:00:00+00:00"
+    },
+    {
+        "title": "Treasury Sec Bessent Speaks",
+        "currency": "USD",
+        "impact": "MEDIUM",
+        "utc_time": "2026-06-03T14:00:00+00:00"
+    },
+    {
+        "title": "Factory Orders m/m",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-03T14:00:00+00:00"
+    },
+    {
+        "title": "Crude Oil Inventories",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-03T14:30:00+00:00"
+    },
+    {
+        "title": "Beige Book",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-03T18:00:00+00:00"
+    },
+    {
+        "title": "FOMC Member Logan Speaks",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-03T20:00:00+00:00"
+    },
+    {
+        "title": "ANZ Commodity Prices m/m",
+        "currency": "NZD",
+        "impact": "LOW",
+        "utc_time": "2026-06-04T01:00:00+00:00"
+    },
+    {
+        "title": "Goods Trade Balance",
+        "currency": "AUD",
+        "impact": "LOW",
+        "utc_time": "2026-06-04T01:30:00+00:00"
+    },
+    {
+        "title": "RBA Gov Bullock Speaks",
+        "currency": "AUD",
+        "impact": "HIGH",
+        "utc_time": "2026-06-04T05:00:00+00:00"
+    },
+    {
+        "title": "CPI m/m",
+        "currency": "CHF",
+        "impact": "MEDIUM",
+        "utc_time": "2026-06-04T06:30:00+00:00"
+    },
+    {
+        "title": "Unemployment Rate",
+        "currency": "CHF",
+        "impact": "LOW",
+        "utc_time": "2026-06-04T07:00:00+00:00"
+    },
+    {
+        "title": "ECB President Lagarde Speaks",
+        "currency": "EUR",
+        "impact": "MEDIUM",
+        "utc_time": "2026-06-04T08:00:00+00:00"
+    },
+    {
+        "title": "Construction PMI",
+        "currency": "GBP",
+        "impact": "LOW",
+        "utc_time": "2026-06-04T08:30:00+00:00"
+    },
+    {
+        "title": "French 10-y Bond Auction",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-04T08:50:00+00:00"
+    },
+    {
+        "title": "Retail Sales m/m",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-04T09:00:00+00:00"
+    },
+    {
+        "title": "Challenger Job Cuts y/y",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-04T09:30:00+00:00"
+    },
+    {
+        "title": "Unemployment Claims",
+        "currency": "USD",
+        "impact": "MEDIUM",
+        "utc_time": "2026-06-04T12:30:00+00:00"
+    },
+    {
+        "title": "FOMC Member Barkin Speaks",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-04T12:30:00+00:00"
+    },
+    {
+        "title": "Revised Nonfarm Productivity q/q",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-04T12:30:00+00:00"
+    },
+    {
+        "title": "Revised Unit Labor Costs q/q",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-04T12:30:00+00:00"
+    },
+    {
+        "title": "Treasury Sec Bessent Speaks",
+        "currency": "USD",
+        "impact": "MEDIUM",
+        "utc_time": "2026-06-04T14:00:00+00:00"
+    },
+    {
+        "title": "FOMC Member Bowman Speaks",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-04T14:00:00+00:00"
+    },
+    {
+        "title": "Natural Gas Storage",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-04T14:30:00+00:00"
+    },
+    {
+        "title": "BOE Gov Bailey Speaks",
+        "currency": "GBP",
+        "impact": "HIGH",
+        "utc_time": "2026-06-04T15:40:00+00:00"
+    },
+    {
+        "title": "FOMC Member Daly Speaks",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-04T15:40:00+00:00"
+    },
+    {
+        "title": "FOMC Member Schmid Speaks",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-04T17:00:00+00:00"
+    },
+    {
+        "title": "FOMC Member Daly Speaks",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-04T17:10:00+00:00"
+    },
+    {
+        "title": "President Trump Speaks",
+        "currency": "USD",
+        "impact": "MEDIUM",
+        "utc_time": "2026-06-04T19:00:00+00:00"
+    },
+    {
+        "title": "Average Cash Earnings y/y",
+        "currency": "JPY",
+        "impact": "LOW",
+        "utc_time": "2026-06-04T23:30:00+00:00"
+    },
+    {
+        "title": "Household Spending y/y",
+        "currency": "JPY",
+        "impact": "LOW",
+        "utc_time": "2026-06-04T23:30:00+00:00"
+    },
+    {
+        "title": "RBA Deputy Gov Hauser Speaks",
+        "currency": "AUD",
+        "impact": "LOW",
+        "utc_time": "2026-06-05T04:35:00+00:00"
+    },
+    {
+        "title": "Leading Indicators",
+        "currency": "JPY",
+        "impact": "LOW",
+        "utc_time": "2026-06-05T05:00:00+00:00"
+    },
+    {
+        "title": "Halifax HPI m/m",
+        "currency": "GBP",
+        "impact": "LOW",
+        "utc_time": "2026-06-05T06:00:00+00:00"
+    },
+    {
+        "title": "French Industrial Production m/m",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-05T06:45:00+00:00"
+    },
+    {
+        "title": "French Trade Balance",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-05T06:45:00+00:00"
+    },
+    {
+        "title": "Foreign Currency Reserves",
+        "currency": "CHF",
+        "impact": "LOW",
+        "utc_time": "2026-06-05T07:00:00+00:00"
+    },
+    {
+        "title": "Final Employment Change q/q",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-05T09:00:00+00:00"
+    },
+    {
+        "title": "Italian Retail Sales m/m",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-05T09:00:00+00:00"
+    },
+    {
+        "title": "Revised GDP q/q",
+        "currency": "EUR",
+        "impact": "LOW",
+        "utc_time": "2026-06-05T09:00:00+00:00"
+    },
+    {
+        "title": "Employment Change",
+        "currency": "CAD",
+        "impact": "HIGH",
+        "utc_time": "2026-06-05T12:30:00+00:00"
+    },
+    {
+        "title": "Unemployment Rate",
+        "currency": "CAD",
+        "impact": "HIGH",
+        "utc_time": "2026-06-05T12:30:00+00:00"
+    },
+    {
+        "title": "Average Hourly Earnings m/m",
+        "currency": "USD",
+        "impact": "HIGH",
+        "utc_time": "2026-06-05T12:30:00+00:00"
+    },
+    {
+        "title": "Non-Farm Employment Change",
+        "currency": "USD",
+        "impact": "HIGH",
+        "utc_time": "2026-06-05T12:30:00+00:00"
+    },
+    {
+        "title": "Unemployment Rate",
+        "currency": "USD",
+        "impact": "HIGH",
+        "utc_time": "2026-06-05T12:30:00+00:00"
+    },
+    {
+        "title": "MPC Member Dhingra Speaks",
+        "currency": "GBP",
+        "impact": "LOW",
+        "utc_time": "2026-06-05T13:40:00+00:00"
+    },
+    {
+        "title": "Ivey PMI",
+        "currency": "CAD",
+        "impact": "MEDIUM",
+        "utc_time": "2026-06-05T14:00:00+00:00"
+    },
+    {
+        "title": "BOE Gov Bailey Speaks",
+        "currency": "GBP",
+        "impact": "MEDIUM",
+        "utc_time": "2026-06-05T18:00:00+00:00"
+    },
+    {
+        "title": "Consumer Credit m/m",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-05T19:00:00+00:00"
+    },
+    {
+        "title": "FOMC Member Barr Speaks",
+        "currency": "USD",
+        "impact": "LOW",
+        "utc_time": "2026-06-06T16:00:00+00:00"
+    }
+]

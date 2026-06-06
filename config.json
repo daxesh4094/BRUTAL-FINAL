@@ -1,0 +1,26 @@
+{
+    "Symbols": [
+        "BTCUSDm"
+    ],
+    "MinRr": 5.0,
+    "MaxNoise": 0.30,
+    "MaxTradePerSymbol": 100,
+    "TradingDays": 325,
+    "ExecutionTf": "M5",
+    "Qty": 0.05,
+    "Confidence": 0.80,
+    "MinDirProb": 0.60,
+    "EV_WAIT": 0,
+    "Magic": 778899,
+    "SmartBook": true,
+    "SmartBookValue": 500.0,
+    "SmartLossValue": 1000050.0,
+    "OppositionPower": false,
+    "Oldisgold": false,
+    "GlobalLossResetTime": "02:30",
+    "MaxLossDay": 30000000.0,
+    "AutoRetrain": false,
+    "RRCutter": true,
+    "RRCutterValue": 0.03,
+    "RM": true
+}

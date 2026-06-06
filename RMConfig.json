@@ -1,0 +1,7 @@
+{
+    "Prenewsbreak": 5,
+    "postnewsbreak": 5,
+    "loss": 3000,
+    "newsimpact": "high, low, medume",
+    "Newsrefresh": 1
+}
