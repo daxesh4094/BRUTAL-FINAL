@@ -1,7 +1,9 @@
 {
     "Prenewsbreak": 5,
     "postnewsbreak": 5,
-    "loss": 3000,
-    "newsimpact": "high, low, medume",
-    "Newsrefresh": 1
+    "loss": 300,
+    "newsimpact": "high",
+    "newscurrency": "USD",
+    "Newsrefresh": 1,
+    "closealltrades": true
 }

@@ -67,47 +67,83 @@ class BotConfig:
 class EmbeddedRiskManager(threading.Thread):
     def __init__(self):
         super().__init__()
-        self.daemon = True  # Automatically shuts down when main bot script exits
+        self.daemon = True  
         self.config = {}
-        self.cached_events = []
+        self.raw_events = []      
+        self.cached_events = []   
         self.last_news_refresh = datetime.min.replace(tzinfo=timezone.utc)
         
         self.load_rm_config()
         self.load_calendar_from_cache()
         self.fetch_economic_calendar()
 
-    def load_rm_config(self):
-        """Hot-reloads RM configuration dynamically."""
-        default_rm_config = {
-            "Prenewsbreak": 5,
-            "postnewsbreak": 5,
-            "loss": 300,
-            "newsimpact": "high, low, medume",
-            "Newsrefresh": 1
-        }
-        try:
-            if not os.path.exists(RM_CONFIG_NAME):
-                with open(RM_CONFIG_NAME, 'w') as f:
-                    json.dump(default_rm_config, f, indent=4)
-                print(f" [+] RM Engine config file '{RM_CONFIG_NAME}' exported automatically.")
-                self.config = default_rm_config
-            else:
-                with open(RM_CONFIG_NAME, 'r') as f:
-                    self.config = json.load(f)
-        except Exception as e:
-            print(f" [RM Engine] Error handling configuration file: {e}")
-            self.config = default_rm_config
 
+
+    def load_rm_config(self):
+            """Hot-reloads RM configuration dynamically including the new currency filter tag."""
+            default_rm_config = {
+                "Prenewsbreak": 5,
+                "postnewsbreak": 5,
+                "loss": 300,
+                "newsimpact": "high, low, medume",
+                "newscurrency": "all",  # 👈 NEW: Default to "all", or use specific lists like "USD, EUR, JPY"
+                "Newsrefresh": 1,
+                "closealltrades": True  
+            }
+            try:
+                if not os.path.exists(RM_CONFIG_NAME):
+                    with open(RM_CONFIG_NAME, 'w') as f:
+                        json.dump(default_rm_config, f, indent=4)
+                    print(f" [+] RM Engine config file '{RM_CONFIG_NAME}' exported automatically.")
+                    self.config = default_rm_config
+                else:
+                    with open(RM_CONFIG_NAME, 'r') as f:
+                        self.config = json.load(f)
+            except Exception as e:
+                print(f" [RM Engine] Error handling configuration file: {e}")
+                self.config = default_rm_config
+
+    def apply_news_filter(self):
+        """⚡ DYNAMIC DOUBLE-FILTER: Filters raw events instantly based on BOTH Impact levels AND targeted Currencies."""
+        # 1. Parse Impact Rules
+        impact_str = self.config.get("newsimpact", "high, low, medume").lower()
+        allowed_impacts = []
+        if "high" in impact_str: allowed_impacts.append("high")
+        if "low" in impact_str: allowed_impacts.append("low")
+        if "med" in impact_str or "medume" in impact_str: allowed_impacts.append("medium")
+
+        # 2. Parse Currency Rules
+        currency_config = self.config.get("newscurrency", "all").lower()
+        allow_all_currencies = "all" in currency_config
+        
+        # Split clean tokens into an array: e.g., ["usd", "eur", "jpy"]
+        allowed_currencies = [c.strip() for c in currency_config.split(",") if c.strip()]
+
+        filtered_list = []
+        for ev in self.raw_events:
+            # Match impact tier
+            impact_match = ev["impact"].lower() in allowed_impacts
+            
+            # Match currency code (e.g., event currency "USD" matches configuration list)
+            ev_currency_clean = ev["currency"].lower()
+            currency_match = allow_all_currencies or (ev_currency_clean in allowed_currencies)
+            
+            if impact_match and currency_match:
+                filtered_list.append(ev)
+                
+        self.cached_events = filtered_list
+        
+        
+        
+        
+        
+        
     def save_calendar_to_cache(self):
-        """Serializes current active memory events into a local JSON backup."""
         try:
             serializable_events = []
-            for ev in self.cached_events:
+            for ev in self.raw_events:
                 serializable_events.append({
-                    "title": ev["title"],
-                    "currency": ev["currency"],
-                    "impact": ev["impact"],
-                    "utc_time": ev["utc_time"].isoformat()
+                    "title": ev["title"], "currency": ev["currency"], "impact": ev["impact"], "utc_time": ev["utc_time"].isoformat()
                 })
             with open(RM_CACHE_NAME, 'w') as f:
                 json.dump(serializable_events, f, indent=4)
@@ -115,23 +151,19 @@ class EmbeddedRiskManager(threading.Thread):
             print(f" [RM Engine] Failed to write local news backup cache file: {e}")
 
     def load_calendar_from_cache(self):
-        """Recover calendar events from local JSON storage if CDN is unreachable."""
         if not os.path.exists(RM_CACHE_NAME):
             return False
         try:
             with open(RM_CACHE_NAME, 'r') as f:
                 stored_events = json.load(f)
-            
             loaded_events = []
             for ev in stored_events:
                 loaded_events.append({
-                    "title": ev["title"],
-                    "currency": ev["currency"],
-                    "impact": ev["impact"],
-                    "utc_time": datetime.fromisoformat(ev["utc_time"])
+                    "title": ev["title"], "currency": ev["currency"], "impact": ev["impact"], "utc_time": datetime.fromisoformat(ev["utc_time"])
                 })
-            self.cached_events = loaded_events
-            print(f" [RM Engine] Local Backup Cache loaded. Loaded {len(self.cached_events)} macro points.")
+            self.raw_events = loaded_events
+            self.apply_news_filter()
+            print(f" [RM Engine] Local Backup Cache loaded. Applied active filter rules.")
             self.print_upcoming_schedule()
             return True
         except Exception as e:
@@ -139,187 +171,178 @@ class EmbeddedRiskManager(threading.Thread):
             return False
 
     def fetch_economic_calendar(self):
-        """Fetches data from CDN with fallback system to handle network limits."""
         now_utc = datetime.now(timezone.utc)
         refresh_interval = timedelta(hours=self.config.get("Newsrefresh", 1))
-        
         if now_utc - self.last_news_refresh < refresh_interval:
             return
-
         print(f" >>> [RM Engine] Updating Economic Calendar from Fair Economy CDN...")
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-        
         try:
             response = requests.get(NEWS_URL, headers=headers, timeout=15)
-            
             if response.status_code != 200:
-                print(f" [RM Engine] CDN Request Failed (Status: {response.status_code}). Using local data...")
                 self.load_calendar_from_cache()
                 self.last_news_refresh = now_utc - refresh_interval + timedelta(minutes=15)
                 return
-                
             root = ET.fromstring(response.content)
-            new_events = []
-            
-            impact_str = self.config.get("newsimpact", "high, low, medume").lower()
-            allowed_impacts = []
-            if "high" in impact_str: allowed_impacts.append("high")
-            if "low" in impact_str: allowed_impacts.append("low")
-            if "med" in impact_str or "medume" in impact_str: allowed_impacts.append("medium")
-
+            new_raw_events = []
             for item in root.findall('event'):
                 impact = item.find('impact').text.strip().lower()
-                if impact not in allowed_impacts:
-                    continue
-                    
                 date_str = item.find('date').text.strip()
                 time_str = item.find('time').text.strip()
                 currency = item.find('country').text.strip()
                 title = item.find('title').text.strip()
-                
-                if "am" not in time_str.lower() and "pm" not in time_str.lower():
-                    continue
-                    
+                if "am" not in time_str.lower() and "pm" not in time_str.lower(): continue
                 try:
-                    event_utc = datetime.strptime(f"{date_str} {time_str}", "%m-%d-%Y %I:%M%p")
-                    event_utc = event_utc.replace(tzinfo=timezone.utc)
-                    
-                    new_events.append({
-                        "title": title,
-                        "currency": currency,
-                        "impact": impact.upper(),
-                        "utc_time": event_utc
-                    })
-                except Exception:
-                    continue
-                    
-            self.cached_events = new_events
+                    event_utc = datetime.strptime(f"{date_str} {time_str}", "%m-%d-%Y %I:%M%p").replace(tzinfo=timezone.utc)
+                    new_raw_events.append({"title": title, "currency": currency, "impact": impact.upper(), "utc_time": event_utc})
+                except Exception: continue
+            self.raw_events = new_raw_events
             self.last_news_refresh = now_utc
             self.save_calendar_to_cache()
+            self.apply_news_filter()
             self.print_upcoming_schedule()
-            
         except Exception as e:
-            print(f" [RM Engine] Network Exception: {e}. Recovering from backup cache...")
             self.load_calendar_from_cache()
             self.last_news_refresh = now_utc - refresh_interval + timedelta(minutes=15)
 
     def print_upcoming_schedule(self):
-        """Pastes upcoming filtered news events adjusted dynamically to system local time."""
         now_utc = datetime.now(timezone.utc)
         tomorrow_utc = now_utc + timedelta(days=1)
-        
         print("\n================== UPCOMING MACRO EVENTS SCHEDULE ==================")
         found = False
         for ev in self.cached_events:
             ev_utc = ev["utc_time"]
             if ev_utc.date() == now_utc.date() or ev_utc.date() == tomorrow_utc.date():
                 if ev_utc >= now_utc - timedelta(minutes=60):
-                    local_display = ev_utc.astimezone()
-                    print(f" [{ev['impact']}] {local_display.strftime('%Y-%m-%d %H:%M')} | {ev['currency']} - {ev['title']}")
+                    print(f" [{ev['impact']}] {ev_utc.astimezone().strftime('%Y-%m-%d %H:%M')} | {ev['currency']} - {ev['title']}")
                     found = True
-        if not found:
-            print(" No matching impact events detected for today or tomorrow.")
+        if not found: print(" No matching impact events detected for today or tomorrow.")
         print("====================================================================\n")
 
-    def get_broker_day_start_timestamp(self):
-        """Finds the precise beginning of the broker day using dynamic sequence checking."""
-        discovery_pairs = ["EURUSD", "BTCUSD", "GBPUSD", "USDJPY", "XAUUSD"]
-        for pair in discovery_pairs:
-            for variant in [pair, pair.lower(), f"{pair}m", f"{pair}+", f"{pair}.pro"]:
-                rates = mt5.copy_rates_from_pos(variant, mt5.TIMEFRAME_D1, 0, 1)
-                if rates is not None and len(rates) > 0:
-                    return int(rates[0]['time'])
-        local_midnight = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        return int(local_midnight.timestamp())
-
     def get_daily_candle_pnl(self):
-        """Calculates account-wide absolute net P&L accumulated since daily candle open."""
-        d1_open_timestamp = self.get_broker_day_start_timestamp()
+        """Perfectly mirrors the MT5 terminal's native 'Today' filter using auto-detected broker clocks."""
+        now_ts = int(time.time())
+        from_ts = now_ts - (86400 * 3)
+        deals = mt5.history_deals_get(from_ts, now_ts + 86400)
+        
+        broker_now_ts = None
+        max_tick_time = 0
+        discovery_pool = ["BTCUSDm", "BTCUSD", "XAUUSD", "EURUSD", "ETHUSD"]
+        for sym in discovery_pool:
+            tick = mt5.symbol_info_tick(sym)
+            if tick is not None and tick.time > max_tick_time:
+                max_tick_time = tick.time
+        if max_tick_time > 0: broker_now_ts = max_tick_time
+        if broker_now_ts is None and deals: broker_now_ts = max(deal.time for deal in deals)
+        if broker_now_ts is None: return 0.0
+        
+        broker_today_str = datetime.fromtimestamp(broker_now_ts).strftime('%Y-%m-%d')
         closed_pnl = 0.0
-        deals = mt5.history_deals_get(d1_open_timestamp, int(time.time() + 86400))
         if deals:
             for deal in deals:
                 if deal.type in [mt5.DEAL_TYPE_BUY, mt5.DEAL_TYPE_SELL]:
-                    closed_pnl += (deal.profit + deal.swap + deal.commission)
-                if deal.type == mt5.DEAL_TYPE_BALANCE and deal.profit < -abs(self.config["loss"]):
-                    closed_pnl += deal.profit
-
+                    if datetime.fromtimestamp(deal.time).strftime('%Y-%m-%d') == broker_today_str:
+                        closed_pnl += (deal.profit + deal.swap + deal.commission)
         floating_pnl = 0.0
         positions = mt5.positions_get()
         if positions:
-            for pos in positions:
-                floating_pnl += (pos.profit + pos.swap)
+            for pos in positions: floating_pnl += (pos.profit + pos.swap)
         return closed_pnl + floating_pnl
 
     def is_inside_news_window(self):
-        """Checks if absolute UTC time sits inside structural restriction blocks."""
         now_utc = datetime.now(timezone.utc)
         pre_break = self.config.get("Prenewsbreak", 5)
         post_break = self.config.get("postnewsbreak", 5)
-        
         for ev in self.cached_events:
             ev_utc = ev["utc_time"]
-            start_block = ev_utc - timedelta(minutes=pre_break)
-            end_block = ev_utc + timedelta(minutes=post_break)
-            if start_block <= now_utc <= end_block:
+            if (ev_utc - timedelta(minutes=pre_break)) <= now_utc <= (ev_utc + timedelta(minutes=post_break)):
                 return True, ev
         return False, None
 
+    def flatten_all_positions(self):
+        """⚡ EMERGENCY PURGE: Close out all current risk immediately across all pairs."""
+        positions = mt5.positions_get()
+        if not positions:
+            return
+        print(f"\n [RM Engine ⚠️] FLATTENING TRIGGERED: Purging {len(positions)} active exposure tracks...")
+        for p in positions:
+            symbol = p.symbol
+            tick = mt5.symbol_info_tick(symbol)
+            if tick is None: continue
+            order_type = mt5.ORDER_TYPE_SELL if p.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY
+            price = tick.bid if p.type == mt5.POSITION_TYPE_BUY else tick.ask
+            request = {
+                "action": mt5.TRADE_ACTION_DEAL, "symbol": symbol, "volume": p.volume, "type": order_type,
+                "position": p.ticket, "price": price, "deviation": 30, "magic": p.magic,
+                "comment": "RM-NewsPurge", "type_time": mt5.ORDER_TIME_GTC, "type_filling": mt5.ORDER_FILLING_IOC,
+            }
+            result = mt5.order_send(request)
+            if result.retcode == mt5.TRADE_RETCODE_DONE:
+                print(f"   [RM Engine ✅] Cleanly liquidated position {p.ticket} [{symbol}]")
+            else:
+                print(f"   [RM Engine ❌] Liquidation failed for ticket {p.ticket}: {result.comment}")
+
     def set_algo_trading_state(self, target_state: bool):
-        """Communicates via background Windows Messaging API to handle the terminal execution button."""
         term_info = mt5.terminal_info()
-        if not term_info: return
-        if term_info.trade_allowed == target_state: return 
-            
+        if not term_info or term_info.trade_allowed == target_state: return 
         def enum_windows_callback(hwnd, extra):
             try:
                 title = win32gui.GetWindowText(hwnd).lower()
                 class_name = win32gui.GetClassName(hwnd).lower()
-                if "metatrader5cl" in class_name or "metatrader 5" in title or "mt5" in title:
-                    extra.append(hwnd)
-            except Exception:
-                pass
+                if "metatarader5cl" in class_name or "metatrader 5" in title or "mt5" in title: extra.append(hwnd)
+            except Exception: pass
             return True
-
         hwnds = []
         win32gui.EnumWindows(enum_windows_callback, hwnds)
         if hwnds:
             win32gui.PostMessage(hwnds[0], WM_COMMAND, MT_WMCMD_EXPERTS, 0)
-            print(f"\n [RM Engine >>>] Adjusted global MT5 Algo Trading state to: {target_state}")
-            time.sleep(1.0) 
-        else:
-            print("\n [RM Engine !] Critical Error: MetaTrader 5 interface window not detected.")
-            print("                -> Run both MT5 and your Bot terminal window as Administrator!")
+            time.sleep(1.0)
 
     def run(self):
-        """Internal worker tracking loop executing concurrently inside the Bot."""
-        print(" >>> [RM Engine] Guard Thread deployed successfully.")
-        while True:
-            try:
-                self.load_rm_config()
-                self.fetch_economic_calendar()
-                
-                daily_pnl = self.get_daily_candle_pnl()
-                max_loss_limit = -abs(self.config.get("loss", 300))
-                in_news_window, breaking_event = self.is_inside_news_window()
-                
-                if daily_pnl <= max_loss_limit:
-                    print(f"\n [RM Engine !!!] SHUTDOWN: Daily Loss Limit Breached. PnL: ${daily_pnl:.2f} <= ${max_loss_limit:.2f}")
-                    self.set_algo_trading_state(False)
-                elif in_news_window:
-                    print(f"\n [RM Engine !!!] NEWS BLOCK ACTIVE: [{breaking_event['impact']}] {breaking_event['title']}")
-                    self.set_algo_trading_state(False)
-                else:
-                    self.set_algo_trading_state(True)
-                
-                # Formatted console flush notice so it cleanly updates inline alongside ML scans
-                sys.stdout.write(f"\r [RM Engine Status] Account PnL: ${daily_pnl:+.2f} | Filter Status: {'BLOCKED' if in_news_window else 'CLEAR'} ")
-                sys.stdout.flush()
-                
-                time.sleep(5)
-            except Exception as e:
-                print(f"\n [RM Engine Error] Monitoring exception error thread intercept: {e}")
-                time.sleep(5)
+            print(" >>> [RM Engine] Guard Thread deployed successfully.")
+            while True:
+                try:
+                    self.load_rm_config()       
+                    self.apply_news_filter()    
+                    self.fetch_economic_calendar()
+                    
+                    daily_pnl = self.get_daily_candle_pnl()
+                    max_loss_limit = -abs(self.config.get("loss", 300))
+                    in_news_window, breaking_event = self.is_inside_news_window()
+                    
+                    # --- SCENARIO 1: MAX LOSS BREACH ---
+                    if daily_pnl <= max_loss_limit:
+                        print(f"\n [RM Engine !!!] SHUTDOWN: Daily Loss Limit Breached. PnL: ${daily_pnl:.2f} <= ${max_loss_limit:.2f}")
+                        self.flatten_all_positions()        # 1. Purge risk FIRST while Algo Trading is still allowed
+                        self.set_algo_trading_state(False)   # 2. Shut down the system entry gateway second
+                    
+                    # --- SCENARIO 2: MACRO NEWS WINDOW ---
+                    elif in_news_window:
+                        print(f"\n [RM Engine !!!] NEWS BLOCK ACTIVE: [{breaking_event['impact']}] {breaking_event['title']}")
+                        
+                        # 1. Execute market liquidation FIRST if configured to true
+                        if self.config.get("closealltrades", True):
+                            self.flatten_all_positions()
+                        else:
+                            print("   [RM Engine] 'closealltrades' is false. Holding current trades through macro event.")
+                            
+                        # 2. Turn off the Algo switch SECOND to block any new entries from firing
+                        self.set_algo_trading_state(False)
+                    
+                    # --- SCENARIO 3: NORMAL OPERATING CONDITIONS ---
+                    else:
+                        self.set_algo_trading_state(True)
+                    
+                    sys.stdout.write(f"\r [RM Engine Status] Account PnL: ${daily_pnl:+.2f} | Filter Status: {'BLOCKED' if in_news_window else 'CLEAR'} ")
+                    sys.stdout.flush()
+                    time.sleep(5)
+                except Exception as e:
+                    print(f"\n [RM Engine Error] Monitoring exception error thread intercept: {e}")
+                    time.sleep(5)
+                    
+
+
+
 
 # — 3. THE 17-TF SYMMETRIC ML ENGINE —
 
