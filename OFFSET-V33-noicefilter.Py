@@ -709,7 +709,7 @@ class SniperBot:
         tp_dist = p_tp_pct * price
         
         min_sl_allowed = 0.2 * atr
-        max_sl_allowed = 3.5 * atr
+        max_sl_allowed = 1.5 * atr
         
         if raw_sl_dist < min_sl_allowed or raw_sl_dist > max_sl_allowed:
             print(f"[{symbol}] SKIP: SL Gatekeeper. Predicted SL ({raw_sl_dist:.2f}) outside bounds [{min_sl_allowed:.2f} - {max_sl_allowed:.2f} ATR]")
