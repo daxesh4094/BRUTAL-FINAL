@@ -22,6 +22,30 @@ RM_CONFIG_NAME = "RMConfig.json"
 RM_CACHE_NAME = "news_cache.json"
 NEWS_URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.xml"
 
+# — HELPER UTILITY FOR DYNAMIC FILLING MODE —
+def get_supported_filling_mode(symbol):
+    """
+    Dynamically checks the broker's allowed filling modes for a symbol 
+    and returns the correct MT5 filling constant.
+    """
+    symbol_info = mt5.symbol_info(symbol)
+    if symbol_info is None:
+        return mt5.ORDER_FILLING_IOC  # Fallback default
+        
+    filling_mode = symbol_info.filling_mode
+    
+    # 1 = SYMBOL_FILLING_FOK, 2 = SYMBOL_FILLING_IOC
+    if filling_mode & 1:
+        return mt5.ORDER_FILLING_FOK
+    elif filling_mode & 2:
+        return mt5.ORDER_FILLING_IOC
+    else:
+        return mt5.ORDER_FILLING_RETURN
+
+
+
+
+
 # — 1. CONFIGURATION MANAGER —
 
 class BotConfig:
@@ -77,31 +101,29 @@ class EmbeddedRiskManager(threading.Thread):
         self.load_calendar_from_cache()
         self.fetch_economic_calendar()
 
-
-
     def load_rm_config(self):
-            """Hot-reloads RM configuration dynamically including the new currency filter tag."""
-            default_rm_config = {
-                "Prenewsbreak": 5,
-                "postnewsbreak": 5,
-                "loss": 300,
-                "newsimpact": "high, low, medume",
-                "newscurrency": "all",  # 👈 NEW: Default to "all", or use specific lists like "USD, EUR, JPY"
-                "Newsrefresh": 1,
-                "closealltrades": True  
-            }
-            try:
-                if not os.path.exists(RM_CONFIG_NAME):
-                    with open(RM_CONFIG_NAME, 'w') as f:
-                        json.dump(default_rm_config, f, indent=4)
-                    print(f" [+] RM Engine config file '{RM_CONFIG_NAME}' exported automatically.")
-                    self.config = default_rm_config
-                else:
-                    with open(RM_CONFIG_NAME, 'r') as f:
-                        self.config = json.load(f)
-            except Exception as e:
-                print(f" [RM Engine] Error handling configuration file: {e}")
+        """Hot-reloads RM configuration dynamically including the new currency filter tag."""
+        default_rm_config = {
+            "Prenewsbreak": 5,
+            "postnewsbreak": 5,
+            "loss": 300,
+            "newsimpact": "high, low, medume",
+            "newscurrency": "all",  # 👈 NEW: Default to "all", or use specific lists like "USD, EUR, JPY"
+            "Newsrefresh": 1,
+            "closealltrades": True  
+        }
+        try:
+            if not os.path.exists(RM_CONFIG_NAME):
+                with open(RM_CONFIG_NAME, 'w') as f:
+                    json.dump(default_rm_config, f, indent=4)
+                print(f" [+] RM Engine config file '{RM_CONFIG_NAME}' exported automatically.")
                 self.config = default_rm_config
+            else:
+                with open(RM_CONFIG_NAME, 'r') as f:
+                    self.config = json.load(f)
+        except Exception as e:
+            print(f" [RM Engine] Error handling configuration file: {e}")
+            self.config = default_rm_config
 
     def apply_news_filter(self):
         """⚡ DYNAMIC DOUBLE-FILTER: Filters raw events instantly based on BOTH Impact levels AND targeted Currencies."""
@@ -132,11 +154,6 @@ class EmbeddedRiskManager(threading.Thread):
                 filtered_list.append(ev)
                 
         self.cached_events = filtered_list
-        
-        
-        
-        
-        
         
     def save_calendar_to_cache(self):
         try:
@@ -220,33 +237,39 @@ class EmbeddedRiskManager(threading.Thread):
         print("====================================================================\n")
 
     def get_daily_candle_pnl(self):
-        """Perfectly mirrors the MT5 terminal's native 'Today' filter using auto-detected broker clocks."""
+        """Perfectly mirrors the MT5 terminal's native 'Today' filter using the true D1 candle start time."""
         now_ts = int(time.time())
         from_ts = now_ts - (86400 * 3)
         deals = mt5.history_deals_get(from_ts, now_ts + 86400)
         
-        broker_now_ts = None
-        max_tick_time = 0
+        # 1. Dynamically capture the exact open timestamp of the current broker D1 candle
+        d1_candle_start = 0
         discovery_pool = ["BTCUSDm", "BTCUSD", "XAUUSD", "EURUSD", "ETHUSD"]
         for sym in discovery_pool:
-            tick = mt5.symbol_info_tick(sym)
-            if tick is not None and tick.time > max_tick_time:
-                max_tick_time = tick.time
-        if max_tick_time > 0: broker_now_ts = max_tick_time
-        if broker_now_ts is None and deals: broker_now_ts = max(deal.time for deal in deals)
-        if broker_now_ts is None: return 0.0
-        
-        broker_today_str = datetime.fromtimestamp(broker_now_ts).strftime('%Y-%m-%d')
+            d1_rates = mt5.copy_rates_from_pos(sym, mt5.TIMEFRAME_D1, 0, 1)
+            if d1_rates is not None and len(d1_rates) > 0:
+                d1_candle_start = int(d1_rates[0]['time'])
+                break
+                
+        if d1_candle_start == 0: 
+            return 0.0 # Guard rail if MT5 connectivity drops momentarily
+
+        # 2. Track Closed PnL using pure timestamp boundary math
         closed_pnl = 0.0
         if deals:
             for deal in deals:
                 if deal.type in [mt5.DEAL_TYPE_BUY, mt5.DEAL_TYPE_SELL]:
-                    if datetime.fromtimestamp(deal.time).strftime('%Y-%m-%d') == broker_today_str:
+                    # If the deal happened AFTER or AT the daily candle open, it belongs to today's session
+                    if deal.time >= d1_candle_start:
                         closed_pnl += (deal.profit + deal.swap + deal.commission)
+                        
+        # 3. Track Floating PnL
         floating_pnl = 0.0
         positions = mt5.positions_get()
         if positions:
-            for pos in positions: floating_pnl += (pos.profit + pos.swap)
+            for pos in positions: 
+                floating_pnl += (pos.profit + pos.swap)
+                
         return closed_pnl + floating_pnl
 
     def is_inside_news_window(self):
@@ -271,10 +294,14 @@ class EmbeddedRiskManager(threading.Thread):
             if tick is None: continue
             order_type = mt5.ORDER_TYPE_SELL if p.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY
             price = tick.bid if p.type == mt5.POSITION_TYPE_BUY else tick.ask
+            
+            # Dynamically resolve filling mode to fix 'unsupported filling mode' errors
+            filling_type = get_supported_filling_mode(symbol)
+            
             request = {
                 "action": mt5.TRADE_ACTION_DEAL, "symbol": symbol, "volume": p.volume, "type": order_type,
                 "position": p.ticket, "price": price, "deviation": 30, "magic": p.magic,
-                "comment": "RM-NewsPurge", "type_time": mt5.ORDER_TIME_GTC, "type_filling": mt5.ORDER_FILLING_IOC,
+                "comment": "RM-NewsPurge", "type_time": mt5.ORDER_TIME_GTC, "type_filling": filling_type,
             }
             result = mt5.order_send(request)
             if result.retcode == mt5.TRADE_RETCODE_DONE:
@@ -299,50 +326,46 @@ class EmbeddedRiskManager(threading.Thread):
             time.sleep(1.0)
 
     def run(self):
-            print(" >>> [RM Engine] Guard Thread deployed successfully.")
-            while True:
-                try:
-                    self.load_rm_config()       
-                    self.apply_news_filter()    
-                    self.fetch_economic_calendar()
+        print(" >>> [RM Engine] Guard Thread deployed successfully.")
+        while True:
+            try:
+                self.load_rm_config()       
+                self.apply_news_filter()    
+                self.fetch_economic_calendar()
+                
+                daily_pnl = self.get_daily_candle_pnl()
+                max_loss_limit = -abs(self.config.get("loss", 300))
+                in_news_window, breaking_event = self.is_inside_news_window()
+                
+                # --- SCENARIO 1: MAX LOSS BREACH ---
+                if daily_pnl <= max_loss_limit:
+                    print(f"\n [RM Engine !!!] SHUTDOWN: Daily Loss Limit Breached. PnL: ${daily_pnl:.2f} <= ${max_loss_limit:.2f}")
+                    self.flatten_all_positions()        # 1. Purge risk FIRST while Algo Trading is still allowed
+                    self.set_algo_trading_state(False)   # 2. Shut down the system entry gateway second
+                
+                # --- SCENARIO 2: MACRO NEWS WINDOW ---
+                elif in_news_window:
+                    print(f"\n [RM Engine !!!] NEWS BLOCK ACTIVE: [{breaking_event['impact']}] {breaking_event['title']}")
                     
-                    daily_pnl = self.get_daily_candle_pnl()
-                    max_loss_limit = -abs(self.config.get("loss", 300))
-                    in_news_window, breaking_event = self.is_inside_news_window()
-                    
-                    # --- SCENARIO 1: MAX LOSS BREACH ---
-                    if daily_pnl <= max_loss_limit:
-                        print(f"\n [RM Engine !!!] SHUTDOWN: Daily Loss Limit Breached. PnL: ${daily_pnl:.2f} <= ${max_loss_limit:.2f}")
-                        self.flatten_all_positions()        # 1. Purge risk FIRST while Algo Trading is still allowed
-                        self.set_algo_trading_state(False)   # 2. Shut down the system entry gateway second
-                    
-                    # --- SCENARIO 2: MACRO NEWS WINDOW ---
-                    elif in_news_window:
-                        print(f"\n [RM Engine !!!] NEWS BLOCK ACTIVE: [{breaking_event['impact']}] {breaking_event['title']}")
-                        
-                        # 1. Execute market liquidation FIRST if configured to true
-                        if self.config.get("closealltrades", True):
-                            self.flatten_all_positions()
-                        else:
-                            print("   [RM Engine] 'closealltrades' is false. Holding current trades through macro event.")
-                            
-                        # 2. Turn off the Algo switch SECOND to block any new entries from firing
-                        self.set_algo_trading_state(False)
-                    
-                    # --- SCENARIO 3: NORMAL OPERATING CONDITIONS ---
+                    # 1. Execute market liquidation FIRST if configured to true
+                    if self.config.get("closealltrades", True):
+                        self.flatten_all_positions()
                     else:
-                        self.set_algo_trading_state(True)
-                    
-                    sys.stdout.write(f"\r [RM Engine Status] Account PnL: ${daily_pnl:+.2f} | Filter Status: {'BLOCKED' if in_news_window else 'CLEAR'} ")
-                    sys.stdout.flush()
-                    time.sleep(5)
-                except Exception as e:
-                    print(f"\n [RM Engine Error] Monitoring exception error thread intercept: {e}")
-                    time.sleep(5)
-                    
-
-
-
+                        print("   [RM Engine] 'closealltrades' is false. Holding current trades through macro event.")
+                        
+                    # 2. Turn off the Algo switch SECOND to block any new entries from firing
+                    self.set_algo_trading_state(False)
+                
+                # --- SCENARIO 3: NORMAL OPERATING CONDITIONS ---
+                else:
+                    self.set_algo_trading_state(True)
+                
+                sys.stdout.write(f"\r [RM Engine Status] Account PnL: ${daily_pnl:+.2f} | Filter Status: {'BLOCKED' if in_news_window else 'CLEAR'} ")
+                sys.stdout.flush()
+                time.sleep(5)
+            except Exception as e:
+                print(f"\n [RM Engine Error] Monitoring exception error thread intercept: {e}")
+                time.sleep(5)
 
 # — 3. THE 17-TF SYMMETRIC ML ENGINE —
 
@@ -387,7 +410,7 @@ class BarotSniperML:
             htf_df[f'ema5_{tf_name}'] = htf_df['close'].ewm(span=5, adjust=False).mean().shift(1)
             htf_df[f'gap_p_{tf_name}'] = (htf_df['close'].shift(1) - htf_df[f'ema5_{tf_name}'])
             
-            pivot_tfs = ['M10', 'M15', 'M30', 'H1', 'H2', 'H3', 'H4', 'H6', 'H8', 'H12']
+            pivot_tfs = ['M10', 'M15', 'M30', 'H1', 'H2', 'H3', 'H4']
             if tf_name in pivot_tfs:
                 htf_df[f'{tf_name}_low_pivot'] = htf_df['low'].rolling(2).min().shift(1)
                 htf_df[f'{tf_name}_high_pivot'] = htf_df['high'].rolling(2).max().shift(1)
@@ -568,12 +591,16 @@ class SniperBot:
     def close_specific_position(self, p, symbol):
         t = mt5.symbol_info_tick(symbol)
         if t is None: return
+        
+        # Dynamically resolve filling mode to fix 'unsupported filling mode' errors
+        filling_type = get_supported_filling_mode(symbol)
+        
         req = {
             "action": mt5.TRADE_ACTION_DEAL, "symbol": symbol, "volume": p.volume,
             "type": mt5.ORDER_TYPE_SELL if p.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY,
-            "position": p.ticket, "price": t.bid if p.type == mt5.POSITION_TYPE_BUY else t.ask,
+            "price": t.bid if p.type == mt5.POSITION_TYPE_BUY else t.ask,
             "deviation": 20, "magic": self.config['Magic'], "comment": "BarotSymmetryV4",
-            "type_time": mt5.ORDER_TIME_GTC, "type_filling": mt5.ORDER_FILLING_IOC,
+            "type_time": mt5.ORDER_TIME_GTC, "type_filling": filling_type,
         }
         mt5.order_send(req)
 
@@ -708,13 +735,17 @@ class SniperBot:
     def execute(self, symbol, side, tp, sl):
         t = mt5.symbol_info_tick(symbol)
         d = mt5.symbol_info(symbol).digits
+        
+        # Dynamically resolve filling mode to fix 'unsupported filling mode' errors
+        filling_type = get_supported_filling_mode(symbol)
+        
         req = {
             "action": mt5.TRADE_ACTION_DEAL, "symbol": symbol, "volume": self.config['Qty'],
             "type": mt5.ORDER_TYPE_BUY if side == "BUY" else mt5.ORDER_TYPE_SELL,
             "price": t.ask if side == "BUY" else t.bid,
             "sl": round(sl, d), "tp": round(tp, d),
             "magic": self.config['Magic'], "comment": "SymSniperV4",
-            "type_time": mt5.ORDER_TIME_GTC, "type_filling": mt5.ORDER_FILLING_IOC,
+            "type_time": mt5.ORDER_TIME_GTC, "type_filling": filling_type,
         }
         res = mt5.order_send(req)
         if res.retcode != mt5.TRADE_RETCODE_DONE:
