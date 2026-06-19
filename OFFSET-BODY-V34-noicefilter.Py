@@ -43,9 +43,6 @@ def get_supported_filling_mode(symbol):
         return mt5.ORDER_FILLING_RETURN
 
 
-
-
-
 # — 1. CONFIGURATION MANAGER —
 
 class BotConfig:
@@ -88,6 +85,7 @@ class BotConfig:
         with open(self.filename, 'r') as f:
             return json.load(f)
 
+
 # — 2. EMBEDDED RISK MANAGER ENGINE (CONCURRENT BACKGROUND TASK) —
 
 class EmbeddedRiskManager(threading.Thread):
@@ -110,7 +108,7 @@ class EmbeddedRiskManager(threading.Thread):
             "postnewsbreak": 5,
             "loss": 300,
             "newsimpact": "high, low, medume",
-            "newscurrency": "all",  # 👈 NEW: Default to "all", or use specific lists like "USD, EUR, JPY"
+            "newscurrency": "all",  # Default to "all", or use specific lists like "USD, EUR, JPY"
             "Newsrefresh": 1,
             "closealltrades": True  
         }
@@ -369,6 +367,7 @@ class EmbeddedRiskManager(threading.Thread):
                 print(f"\n [RM Engine Error] Monitoring exception error thread intercept: {e}")
                 time.sleep(5)
 
+
 # — 3. THE 17-TF SYMMETRIC ML ENGINE —
 
 class BarotSniperML:
@@ -417,24 +416,35 @@ class BarotSniperML:
                 htf_df[f'{tf_name}_low_pivot'] = htf_df['low'].rolling(2).min().shift(1)
                 htf_df[f'{tf_name}_high_pivot'] = htf_df['high'].rolling(2).max().shift(1)
             
-            cols = ['time', f'ema5_{tf_name}', f'gap_p_{tf_name}']
+            # --- CALCULATE ATR PER TIMEFRAME FOR PROPER SCALE NORMALIZATION ---
+            htf_hl = htf_df['high'] - htf_df['low']
+            htf_hc = (htf_df['high'] - htf_df['close'].shift()).abs()
+            htf_lc = (htf_df['low'] - htf_df['close'].shift()).abs()
+            htf_df[f'atr_{tf_name}'] = pd.concat([htf_hl, htf_hc, htf_lc], axis=1).max(axis=1).rolling(14).mean()
+            
+            # --- CALCULATE CANDLE SHAPES FOR THIS SPECIFIC TIMEFRAME ---
+            htf_df[f'color_{tf_name}'] = np.where(htf_df['close'] > htf_df['open'], 1, 
+                                         np.where(htf_df['close'] < htf_df['open'], -1, 0))
+            htf_df[f'norm_open_{tf_name}'] = (htf_df['open'] - htf_df['close']) / htf_df[f'atr_{tf_name}']
+            htf_df[f'norm_high_{tf_name}'] = (htf_df['high'] - htf_df['close']) / htf_df[f'atr_{tf_name}']
+            htf_df[f'norm_low_{tf_name}'] = (htf_df['low'] - htf_df['close']) / htf_df[f'atr_{tf_name}']
+            
+            # --- HISTORICAL LAGS FOR THE SPECIFIC TIMEFRAME ---
+            for i in range(1, 4):
+                htf_df[f'color_{tf_name}_lag_{i}'] = htf_df[f'color_{tf_name}'].shift(i)
+                htf_df[f'norm_open_{tf_name}_lag_{i}'] = htf_df[f'norm_open_{tf_name}'].shift(i)
+                htf_df[f'norm_high_{tf_name}_lag_{i}'] = htf_df[f'norm_high_{tf_name}'].shift(i)
+                htf_df[f'norm_low_{tf_name}_lag_{i}'] = htf_df[f'norm_low_{tf_name}'].shift(i)
+            
+            # --- COLLECT ALL COLUMN NAMES FOR MERGING ---
+            cols = ['time', f'ema5_{tf_name}', f'gap_p_{tf_name}', f'color_{tf_name}', f'norm_open_{tf_name}', f'norm_high_{tf_name}', f'norm_low_{tf_name}']
+            for i in range(1, 4):
+                cols += [f'color_{tf_name}_lag_{i}', f'norm_open_{tf_name}_lag_{i}', f'norm_high_{tf_name}_lag_{i}', f'norm_low_{tf_name}_lag_{i}']
+            
             if tf_name in pivot_tfs:
                 cols += [f'{tf_name}_low_pivot', f'{tf_name}_high_pivot']
             
             main_df = pd.merge_asof(main_df.sort_values('time'), htf_df[cols].sort_values('time'), on='time', direction='backward')
-
-        # --- ORDER BLOCK FEATURE ENGINEERING ---
-        main_df['candle_color'] = np.where(main_df['close'] > main_df['open'], 1, 
-                                  np.where(main_df['close'] < main_df['open'], -1, 0))
-        main_df['norm_open'] = (main_df['open'] - main_df['close']) / main_df['atr_m5']
-        main_df['norm_high'] = (main_df['high'] - main_df['close']) / main_df['atr_m5']
-        main_df['norm_low'] = (main_df['low'] - main_df['close']) / main_df['atr_m5']
-        
-        for i in range(1, 4):
-            main_df[f'color_lag_{i}'] = main_df['candle_color'].shift(i)
-            main_df[f'norm_open_lag_{i}'] = main_df['norm_open'].shift(i)
-            main_df[f'norm_high_lag_{i}'] = main_df['norm_high'].shift(i)
-            main_df[f'norm_low_lag_{i}'] = main_df['norm_low'].shift(i)
 
         return main_df.dropna()
 
@@ -462,7 +472,8 @@ class BarotSniperML:
         df.loc[buy_cond, 'y_class'] = 1
         df.loc[sell_cond, 'y_class'] = 2
 
-        feature_cols = [c for c in df.columns if 'ema5' in c or 'gap_' in c or 'pivot' in c or 'norm_' in c or 'color' in c]
+        # Filter updated to natively catch 'color' and 'norm_' features across all timeframes
+        feature_cols = [c for c in df.columns if 'ema5' in c or 'gap_' in c or 'pivot' in c or 'color' in c or 'norm_' in c]
         X, y = df[feature_cols].values, df['y_class'].values
 
         self.models['direction'] = RandomForestClassifier(n_estimators=150, max_features='log2', class_weight='balanced', min_samples_leaf=10).fit(X, y)
@@ -488,6 +499,7 @@ class BarotSniperML:
             for name in self.model_names: self.models[name] = joblib.load(f"{self.model_path}{name}.joblib")
             return True
         except: return False
+
 
 # — 4. LIVE EXECUTION ENGINE —
 
@@ -677,7 +689,8 @@ class SniperBot:
             print(f"[{symbol}] SKIP: MTF Data fetch failed.")
             return
             
-        feature_cols = [c for c in df.columns if 'ema5' in c or 'gap_' in c or 'pivot' in c or 'norm_' in c or 'color' in c]
+        # Filter updated to natively catch 'color' and 'norm_' features across all timeframes
+        feature_cols = [c for c in df.columns if 'ema5' in c or 'gap_' in c or 'pivot' in c or 'color' in c or 'norm_' in c]
         X_last = df[feature_cols].iloc[-1:].values
         price, atr = df.iloc[-1]['close'], df.iloc[-1]['atr_m5']
 
@@ -717,7 +730,7 @@ class SniperBot:
             print(f"[{symbol}] SKIP: Low Confidence. [Bias:{bias} Conf:{conf:.2f} < Req:{self.config['Confidence']}]")
             return
 
-        # ——— NEW STRUCTURAL GATEKEEPER LOGIC ———
+        # ——— STRUCTURAL GATEKEEPER LOGIC ———
         raw_sl_dist = p_sl_pct * price
         tp_dist = p_tp_pct * price
         
