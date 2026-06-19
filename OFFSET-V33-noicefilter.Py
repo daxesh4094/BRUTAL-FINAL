@@ -73,7 +73,9 @@ class BotConfig:
             "AutoRetrain": True,
             "RRCutter": True,
             "RRCutterValue": 1.0,
-            "RM": True  # MASTER TOGGLE: True = Embedded Risk Manager runs, False = Bot acts normal
+            "RM": True,  # MASTER TOGGLE: True = Embedded Risk Manager runs, False = Bot acts normal
+            "FixedTP": True,      # Enable/Disable fixed risk-to-reward target
+            "FixedTPRR": 2.0      # Target multiplier based strictly on Stop Loss size
         }
         self.data = self.load_config()
 
@@ -707,7 +709,7 @@ class SniperBot:
         tp_dist = p_tp_pct * price
         
         min_sl_allowed = 0.2 * atr
-        max_sl_allowed = 1.5 * atr
+        max_sl_allowed = 3.5 * atr
         
         if raw_sl_dist < min_sl_allowed or raw_sl_dist > max_sl_allowed:
             print(f"[{symbol}] SKIP: SL Gatekeeper. Predicted SL ({raw_sl_dist:.2f}) outside bounds [{min_sl_allowed:.2f} - {max_sl_allowed:.2f} ATR]")
@@ -715,15 +717,24 @@ class SniperBot:
             
         sl_dist = raw_sl_dist
         # ———————————————————————————————————————————
-        
-        potential_rr = tp_dist / sl_dist if sl_dist > 0 else 0
-        if potential_rr < self.config['MinRr']:
-            print(f"[{symbol}] SKIP: RR Filter. [Est RR:{potential_rr:.2f} < Req:{self.config['MinRr']}]")
-            return
 
-        if self.config.get('RRCutter'):
-            adjusted_rr = max(0.1, potential_rr - self.config.get('RRCutterValue', 1.0))
-            tp_dist = adjusted_rr * sl_dist
+        # Determine TP Target Size based on configuration settings
+        if self.config.get('FixedTP', False):
+            fixed_rr = self.config.get('FixedTPRR', 2.0)
+            tp_dist = fixed_rr * sl_dist
+            potential_rr = fixed_rr
+            print(f"[{symbol}] Fixed TP Active. Forcing Reward Ratio to: {fixed_rr:.2f}")
+        else:
+            tp_dist = p_tp_pct * price
+            potential_rr = tp_dist / sl_dist if sl_dist > 0 else 0
+
+            if potential_rr < self.config['MinRr']:
+                print(f"[{symbol}] SKIP: RR Filter. [Est RR:{potential_rr:.2f} < Req:{self.config['MinRr']}]")
+                return
+
+            if self.config.get('RRCutter'):
+                adjusted_rr = max(0.1, potential_rr - self.config.get('RRCutterValue', 1.0))
+                tp_dist = adjusted_rr * sl_dist
 
         tp_p = price + tp_dist if bias == "BUY" else price - tp_dist
         sl_p = price - sl_dist if bias == "BUY" else price + sl_dist
