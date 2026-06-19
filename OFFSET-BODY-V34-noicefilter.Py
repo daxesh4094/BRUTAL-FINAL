@@ -408,21 +408,22 @@ class BarotSniperML:
             htf_df = pd.DataFrame(htf_rates)
             htf_df['time'] = pd.to_datetime(htf_df['time'], unit='s')
             
-            htf_df[f'ema5_{tf_name}'] = htf_df['close'].ewm(span=5, adjust=False).mean().shift(1)
-            htf_df[f'gap_p_{tf_name}'] = (htf_df['close'].shift(1) - htf_df[f'ema5_{tf_name}'])
+            # Note: Features are calculated natively on current rows first
+            htf_df[f'ema5_{tf_name}'] = htf_df['close'].ewm(span=5, adjust=False).mean()
+            htf_df[f'gap_p_{tf_name}'] = (htf_df['close'] - htf_df[f'ema5_{tf_name}'])
             
             pivot_tfs = ['M10', 'M15', 'M30', 'H1', 'H2', 'H3', 'H4']
             if tf_name in pivot_tfs:
-                htf_df[f'{tf_name}_low_pivot'] = htf_df['low'].rolling(2).min().shift(1)
-                htf_df[f'{tf_name}_high_pivot'] = htf_df['high'].rolling(2).max().shift(1)
+                htf_df[f'{tf_name}_low_pivot'] = htf_df['low'].rolling(2).min()
+                htf_df[f'{tf_name}_high_pivot'] = htf_df['high'].rolling(2).max()
             
-            # --- CALCULATE ATR PER TIMEFRAME FOR PROPER SCALE NORMALIZATION ---
+            # --- CALCULATE ATR PER TIMEFRAME ---
             htf_hl = htf_df['high'] - htf_df['low']
             htf_hc = (htf_df['high'] - htf_df['close'].shift()).abs()
             htf_lc = (htf_df['low'] - htf_df['close'].shift()).abs()
             htf_df[f'atr_{tf_name}'] = pd.concat([htf_hl, htf_hc, htf_lc], axis=1).max(axis=1).rolling(14).mean()
             
-            # --- CALCULATE CANDLE SHAPES FOR THIS SPECIFIC TIMEFRAME ---
+            # --- CALCULATE CANDLE SHAPES FOR THIS TIMEFRAME ---
             htf_df[f'color_{tf_name}'] = np.where(htf_df['close'] > htf_df['open'], 1, 
                                          np.where(htf_df['close'] < htf_df['open'], -1, 0))
             htf_df[f'norm_open_{tf_name}'] = (htf_df['open'] - htf_df['close']) / htf_df[f'atr_{tf_name}']
@@ -435,6 +436,15 @@ class BarotSniperML:
                 htf_df[f'norm_open_{tf_name}_lag_{i}'] = htf_df[f'norm_open_{tf_name}'].shift(i)
                 htf_df[f'norm_high_{tf_name}_lag_{i}'] = htf_df[f'norm_high_{tf_name}'].shift(i)
                 htf_df[f'norm_low_{tf_name}_lag_{i}'] = htf_df[f'norm_low_{tf_name}'].shift(i)
+            
+            # =======================================================================
+            # ⚡ ANTI-DATA LEAKAGE SHIFT GATEWAY
+            # Shift every column (except time) forward by 1 row.
+            # This forces the data from a candle to only be visible to the engine 
+            # AFTER its completion time, making it perfectly blind to forming candles.
+            # =======================================================================
+            shift_cols = [c for c in htf_df.columns if c != 'time']
+            htf_df[shift_cols] = htf_df[shift_cols].shift(1)
             
             # --- COLLECT ALL COLUMN NAMES FOR MERGING ---
             cols = ['time', f'ema5_{tf_name}', f'gap_p_{tf_name}', f'color_{tf_name}', f'norm_open_{tf_name}', f'norm_high_{tf_name}', f'norm_low_{tf_name}']
@@ -472,7 +482,6 @@ class BarotSniperML:
         df.loc[buy_cond, 'y_class'] = 1
         df.loc[sell_cond, 'y_class'] = 2
 
-        # Filter updated to natively catch 'color' and 'norm_' features across all timeframes
         feature_cols = [c for c in df.columns if 'ema5' in c or 'gap_' in c or 'pivot' in c or 'color' in c or 'norm_' in c]
         X, y = df[feature_cols].values, df['y_class'].values
 
@@ -689,7 +698,6 @@ class SniperBot:
             print(f"[{symbol}] SKIP: MTF Data fetch failed.")
             return
             
-        # Filter updated to natively catch 'color' and 'norm_' features across all timeframes
         feature_cols = [c for c in df.columns if 'ema5' in c or 'gap_' in c or 'pivot' in c or 'color' in c or 'norm_' in c]
         X_last = df[feature_cols].iloc[-1:].values
         price, atr = df.iloc[-1]['close'], df.iloc[-1]['atr_m5']
